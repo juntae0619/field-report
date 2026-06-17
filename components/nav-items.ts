@@ -19,7 +19,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
-  { href: "/schedules", label: "임장 일정", icon: CalendarDays },
+  { href: "/schedules", label: "일정 등록", icon: CalendarDays },
   { href: "/reports", label: "임장보고서", icon: FileText },
   { href: "/properties", label: "임장 희망 물건", icon: Building2 },
   { href: "/board", label: "게시판", icon: MessageSquare },

@@ -1,5 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { type Group, type Schedule } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { type Group, type Schedule, type ScheduleType } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,8 +28,41 @@ export function ScheduleForm({
   schedule?: Schedule;
   error?: string;
 }) {
+  const [type, setType] = useState<ScheduleType>(schedule?.type ?? "visit");
+
+  const isVisit = type === "visit";
+
   return (
     <form action={action} className="flex flex-col gap-5">
+      {/* 일정 유형 토글 */}
+      <input type="hidden" name="type" value={type} />
+      <div className="flex gap-2 rounded-xl border p-1.5">
+        <button
+          type="button"
+          onClick={() => setType("visit")}
+          className={cn(
+            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors",
+            isVisit
+              ? "bg-blue-500 text-white shadow-sm"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          임장 일정
+        </button>
+        <button
+          type="button"
+          onClick={() => setType("presentation")}
+          className={cn(
+            "flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors",
+            !isVisit
+              ? "bg-orange-500 text-white shadow-sm"
+              : "text-muted-foreground hover:bg-muted"
+          )}
+        >
+          발표 일정
+        </button>
+      </div>
+
       <div className="flex flex-col gap-2">
         <Label htmlFor="title">제목</Label>
         <Input
@@ -33,13 +70,13 @@ export function ScheduleForm({
           name="title"
           required
           defaultValue={schedule?.title}
-          placeholder="예) 송파구 임장"
+          placeholder={isVisit ? "예) 송파구 임장" : "예) 3조 임장 발표"}
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="visit_date">날짜</Label>
+          <Label htmlFor="visit_date">{isVisit ? "임장 날짜" : "발표 날짜"}</Label>
           <Input
             id="visit_date"
             name="visit_date"
@@ -49,30 +86,17 @@ export function ScheduleForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="region">지역</Label>
+          <Label htmlFor="region">{isVisit ? "지역" : "장소"}</Label>
           <Input
             id="region"
             name="region"
             defaultValue={schedule?.region ?? ""}
-            placeholder="예) 서울 송파구"
+            placeholder={isVisit ? "예) 서울 송파구" : "예) 강남 스터디룸"}
           />
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label>일정 유형</Label>
-        <Select name="type" defaultValue={schedule?.type ?? "visit"}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="visit">임장 일정</SelectItem>
-            <SelectItem value="presentation">발표 일정</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label>반</Label>
           <Select name="cohort" defaultValue={schedule?.cohort ?? "weekday"}>
@@ -101,29 +125,34 @@ export function ScheduleForm({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label>상태</Label>
-          <Select name="status" defaultValue={schedule?.status ?? "planned"}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="planned">예정</SelectItem>
-              <SelectItem value="done">완료</SelectItem>
-              <SelectItem value="canceled">취소</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="plan">임장 계획</Label>
+        <Label>상태</Label>
+        <Select name="status" defaultValue={schedule?.status ?? "planned"}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="planned">예정</SelectItem>
+            <SelectItem value="done">완료</SelectItem>
+            <SelectItem value="canceled">취소</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="plan">{isVisit ? "임장 계획" : "발표 내용"}</Label>
         <Textarea
           id="plan"
           name="plan"
           rows={8}
           defaultValue={schedule?.plan ?? ""}
-          placeholder="동선, 방문 단지, 체크리스트, 집결 시간/장소 등을 적어주세요."
+          placeholder={
+            isVisit
+              ? "동선, 방문 단지, 체크리스트, 집결 시간/장소 등을 적어주세요."
+              : "발표 순서, 자료 준비 사항, 참석 안내 등을 적어주세요."
+          }
         />
       </div>
 

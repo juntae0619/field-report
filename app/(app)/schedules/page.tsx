@@ -39,8 +39,8 @@ export default async function SchedulesPage({
   return (
     <div>
       <PageHeader
-        title="임장 일정"
-        description="반·조별 임장 일정과 계획을 확인하세요."
+        title="일정 관리"
+        description="반·조별 임장 일정과 발표 일정을 확인하세요."
         action={
           profile.role === "admin" ? (
             <Button asChild>
