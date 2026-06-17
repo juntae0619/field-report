@@ -29,6 +29,7 @@ export function ScheduleCalendar({
 }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [schedules, setSchedules] = useState<Schedule[]>(initialSchedules);
+  const [selectedDay, setSelectedDay] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -57,8 +58,11 @@ export function ScheduleCalendar({
     return schedules.filter((s) => isSameDay(parseISO(s.visit_date), day));
   }
 
+  const selectedEvents = getEventsForDay(selectedDay);
+
   return (
     <div className={cn("flex flex-col gap-3", loading && "opacity-60 transition-opacity")}>
+      {/* 월 네비게이션 */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
@@ -77,6 +81,7 @@ export function ScheduleCalendar({
         </button>
       </div>
 
+      {/* 범례 */}
       <div className="flex gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="inline-block size-2.5 rounded-full bg-blue-500" />
@@ -88,6 +93,7 @@ export function ScheduleCalendar({
         </span>
       </div>
 
+      {/* 요일 헤더 */}
       <div className="grid grid-cols-7 text-center text-xs font-medium text-muted-foreground">
         {DAY_NAMES.map((d) => (
           <div key={d} className="py-1">
@@ -96,18 +102,23 @@ export function ScheduleCalendar({
         ))}
       </div>
 
+      {/* 캘린더 그리드 */}
       <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-border">
         {days.map((day) => {
           const events = getEventsForDay(day);
           const inMonth = isSameMonth(day, currentMonth);
           const isToday = isSameDay(day, new Date());
+          const isSelected = isSameDay(day, selectedDay);
 
           return (
             <div
               key={day.toISOString()}
+              onClick={() => setSelectedDay(day)}
               className={cn(
-                "flex min-h-[4.5rem] flex-col gap-0.5 bg-background p-1",
-                !inMonth && "opacity-30"
+                "flex cursor-pointer flex-col gap-0.5 bg-background p-1",
+                "min-h-10 md:min-h-[4.5rem]",
+                !inMonth && "opacity-30",
+                isSelected && "ring-2 ring-inset ring-blue-400 md:ring-0"
               )}
             >
               <span
@@ -118,12 +129,31 @@ export function ScheduleCalendar({
               >
                 {format(day, "d")}
               </span>
+
+              {/* 모바일: 색 점(dot)만 표시 */}
+              <div className="flex flex-wrap gap-0.5 md:hidden">
+                {events.slice(0, 3).map((s) => (
+                  <span
+                    key={s.id}
+                    className={cn(
+                      "size-1.5 rounded-full",
+                      s.type === "visit" ? "bg-blue-500" : "bg-orange-500"
+                    )}
+                  />
+                ))}
+                {events.length > 3 && (
+                  <span className="size-1.5 rounded-full bg-gray-400" />
+                )}
+              </div>
+
+              {/* 데스크톱: 텍스트 pill */}
               {events.slice(0, 2).map((s) => (
                 <Link
                   key={s.id}
                   href={`/schedules/${s.id}`}
+                  onClick={(e) => e.stopPropagation()}
                   className={cn(
-                    "truncate rounded px-1 py-px text-xs leading-4 text-white",
+                    "hidden truncate rounded px-1 py-px text-xs leading-4 text-white md:block",
                     s.type === "visit"
                       ? "bg-blue-500 hover:bg-blue-600"
                       : "bg-orange-500 hover:bg-orange-600"
@@ -134,13 +164,49 @@ export function ScheduleCalendar({
                 </Link>
               ))}
               {events.length > 2 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="hidden text-xs text-muted-foreground md:block">
                   +{events.length - 2}
                 </span>
               )}
             </div>
           );
         })}
+      </div>
+
+      {/* 모바일: 선택한 날짜의 일정 리스트 */}
+      <div className="md:hidden">
+        <p className="mb-2 text-sm font-medium text-muted-foreground">
+          {format(selectedDay, "M월 d일")} 일정
+        </p>
+        {selectedEvents.length === 0 ? (
+          <p className="py-3 text-center text-sm text-muted-foreground">
+            일정이 없습니다.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {selectedEvents.map((s) => (
+              <Link
+                key={s.id}
+                href={`/schedules/${s.id}`}
+                className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50"
+              >
+                <span
+                  className={cn(
+                    "size-2.5 shrink-0 rounded-full",
+                    s.type === "visit" ? "bg-blue-500" : "bg-orange-500"
+                  )}
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{s.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {s.type === "visit" ? "임장 일정" : "발표 일정"}
+                    {s.region ? ` · ${s.region}` : ""}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
