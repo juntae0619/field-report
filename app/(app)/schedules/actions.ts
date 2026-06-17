@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/auth";
 
 function parse(formData: FormData) {
   const group_id_raw = String(formData.get("group_id") ?? "none");
+  const type = String(formData.get("type") ?? "visit");
+  const status = String(formData.get("status") ?? "planned");
   return {
     title: String(formData.get("title") ?? "").trim(),
     visit_date: String(formData.get("visit_date") ?? ""),
@@ -14,7 +16,8 @@ function parse(formData: FormData) {
     group_id: group_id_raw === "none" ? null : group_id_raw,
     region: String(formData.get("region") ?? "").trim() || null,
     plan: String(formData.get("plan") ?? "").trim() || null,
-    status: String(formData.get("status") ?? "planned"),
+    type: ["visit", "presentation"].includes(type) ? type : "visit",
+    status: ["planned", "done", "canceled"].includes(status) ? status : "planned",
   };
 }
 

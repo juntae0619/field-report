@@ -19,17 +19,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScheduleCalendar } from "@/components/schedule-calendar";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
   const today = new Date().toISOString().slice(0, 10);
 
+  const monthStart = today.slice(0, 7) + "-01";
+  const nextMonthDate = new Date(today);
+  nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+  const monthEnd = nextMonthDate.toISOString().slice(0, 10);
+
   const [
     { data: upcoming },
     { data: recentReports },
     { data: recentPosts },
     { count: propertyCount },
+    { data: monthSchedules },
   ] = await Promise.all([
     supabase
       .from("schedules")
@@ -48,6 +55,12 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false })
       .limit(5),
     supabase.from("properties").select("*", { count: "exact", head: true }),
+    supabase
+      .from("schedules")
+      .select("*")
+      .gte("visit_date", monthStart)
+      .lt("visit_date", monthEnd)
+      .order("visit_date"),
   ]);
 
   const upcomingList = (upcoming ?? []) as Schedule[];
@@ -160,6 +173,17 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>일정 캘린더</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScheduleCalendar
+            initialSchedules={(monthSchedules ?? []) as Schedule[]}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

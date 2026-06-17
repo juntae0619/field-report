@@ -1,6 +1,7 @@
 export type Cohort = "weekday" | "weekend";
 export type Role = "admin" | "member";
 export type ScheduleStatus = "planned" | "done" | "canceled";
+export type ScheduleType = "visit" | "presentation";
 
 export const COHORT_LABEL: Record<Cohort, string> = {
   weekday: "주중반",
@@ -16,6 +17,11 @@ export const SCHEDULE_STATUS_LABEL: Record<ScheduleStatus, string> = {
   planned: "예정",
   done: "완료",
   canceled: "취소",
+};
+
+export const SCHEDULE_TYPE_LABEL: Record<ScheduleType, string> = {
+  visit: "임장 일정",
+  presentation: "발표 일정",
 };
 
 export interface Profile {
@@ -62,6 +68,7 @@ export interface Schedule {
   region: string | null;
   plan: string | null;
   status: ScheduleStatus;
+  type: ScheduleType;
   created_by: string | null;
   created_at: string;
 }

@@ -39,7 +39,7 @@ export function ScheduleForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
-          <Label htmlFor="visit_date">임장 날짜</Label>
+          <Label htmlFor="visit_date">날짜</Label>
           <Input
             id="visit_date"
             name="visit_date"
@@ -57,6 +57,19 @@ export function ScheduleForm({
             placeholder="예) 서울 송파구"
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>일정 유형</Label>
+        <Select name="type" defaultValue={schedule?.type ?? "visit"}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="visit">임장 일정</SelectItem>
+            <SelectItem value="presentation">발표 일정</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
