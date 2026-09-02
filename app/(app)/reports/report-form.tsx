@@ -8,12 +8,19 @@ import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
 import { formatBytes, randomId } from "@/lib/utils";
-import { type Report } from "@/lib/types";
+import { type Property, type Report, type Schedule } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { StarsInput } from "@/components/stars";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ALLOWED_EXTENSIONS = new Set([
   "pdf", "hwp", "hwpx", "ppt", "pptx", "doc", "docx",
@@ -25,12 +32,16 @@ interface Props {
   defaultScheduleId?: string;
   defaultPropertyId?: string;
   report?: Report;
+  schedules: Pick<Schedule, "id" | "title" | "visit_date">[];
+  properties: Pick<Property, "id" | "name" | "region">[];
 }
 
 export function ReportForm({
   defaultScheduleId,
   defaultPropertyId,
   report,
+  schedules,
+  properties,
 }: Props) {
   const router = useRouter();
   const supabase = createClient();
@@ -49,19 +60,36 @@ export function ReportForm({
       const propertyId = String(fd.get("property_id") || "none");
       const ratingRaw = String(fd.get("rating") || "0");
 
+      const ratingValue = Number(ratingRaw);
       const payload = {
         title: String(fd.get("title") || "").trim(),
         visit_date: String(fd.get("visit_date") || "").trim() || null,
         region: String(fd.get("region") || "").trim() || null,
         schedule_id: scheduleId === "none" ? null : scheduleId,
         property_id: propertyId === "none" ? null : propertyId,
+        summary: String(fd.get("summary") || "").trim() || null,
+        location_review: String(fd.get("location_review") || "").trim() || null,
+        price_review: String(fd.get("price_review") || "").trim() || null,
+        pros: String(fd.get("pros") || "").trim() || null,
+        cons: String(fd.get("cons") || "").trim() || null,
         conclusion: String(fd.get("conclusion") || "").trim() || null,
-        rating: Number(ratingRaw) || null,
+        rating:
+          Number.isInteger(ratingValue) && ratingValue >= 1 && ratingValue <= 5
+            ? ratingValue
+            : null,
       };
 
-      if (!payload.title) {
-        toast.error("제목을 입력하세요.");
-        setSubmitting(false);
+      if (!payload.title || payload.title.length > 200) {
+        toast.error("제목을 1자 이상 200자 이하로 입력하세요.");
+        return;
+      }
+      if (!payload.visit_date || !payload.region) {
+        toast.error("임장일자와 지역을 입력하세요.");
+        return;
+      }
+      const sections = [payload.summary, payload.location_review, payload.price_review, payload.pros, payload.cons, payload.conclusion];
+      if (sections.some((value) => value && value.length > 10000)) {
+        toast.error("각 분석 항목은 10,000자 이하로 입력하세요.");
         return;
       }
 
@@ -106,13 +134,17 @@ export function ReportForm({
           toast.error(`파일 업로드 실패: ${file.name}`);
           continue;
         }
-        await supabase.from("report_files").insert({
+        const { error: recordError } = await supabase.from("report_files").insert({
           report_id: reportId,
           storage_path: path,
           file_name: file.name,
           file_type: file.type || null,
           file_size: file.size,
         });
+        if (recordError) {
+          await supabase.storage.from("reports").remove([path]);
+          toast.error(`파일 정보 저장 실패: ${file.name}`);
+        }
       }
 
       toast.success(
@@ -179,21 +211,65 @@ export function ReportForm({
           id="title"
           name="title"
           required
+          maxLength={200}
           defaultValue={report?.title}
           placeholder="예) 잠실 헬리오시티 임장보고서"
         />
       </div>
 
-      <input
-        type="hidden"
-        name="schedule_id"
-        value={report?.schedule_id ?? defaultScheduleId ?? ""}
-      />
-      <input
-        type="hidden"
-        name="property_id"
-        value={report?.property_id ?? defaultPropertyId ?? ""}
-      />
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="summary">물건 개요·임장 목적</Label>
+        <Textarea id="summary" name="summary" rows={4} maxLength={10000} defaultValue={report?.summary ?? ""} placeholder="물건 기본 정보, 임장 목적, 사전 확인 사항을 정리하세요." />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="location_review">입지·생활권 분석</Label>
+        <Textarea id="location_review" name="location_review" rows={5} maxLength={10000} defaultValue={report?.location_review ?? ""} placeholder="교통, 상권, 학군, 일자리, 환경, 개발 호재와 현장 분위기를 기록하세요." />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="price_review">가격·시세·수익성 분석</Label>
+        <Textarea id="price_review" name="price_review" rows={5} maxLength={10000} defaultValue={report?.price_review ?? ""} placeholder="매매·전월세 시세, 실거래가, 경공매 최저가, 예상 수익과 비용을 기록하세요." />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="pros">장점·기회요인</Label>
+          <Textarea id="pros" name="pros" rows={4} maxLength={10000} defaultValue={report?.pros ?? ""} placeholder="현장에서 확인한 강점과 투자 기회를 적어주세요." />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="cons">단점·위험요인</Label>
+          <Textarea id="cons" name="cons" rows={4} maxLength={10000} defaultValue={report?.cons ?? ""} placeholder="소음, 경사, 공실, 권리·수선 위험 등 주의점을 적어주세요." />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label>연결 일정</Label>
+          <Select name="schedule_id" defaultValue={report?.schedule_id ?? defaultScheduleId ?? "none"}>
+            <SelectTrigger><SelectValue placeholder="일정 선택" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">연결하지 않음</SelectItem>
+              {schedules.map((schedule) => (
+                <SelectItem key={schedule.id} value={schedule.id}>
+                  {schedule.visit_date} · {schedule.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>연결 물건</Label>
+          <Select name="property_id" defaultValue={report?.property_id ?? defaultPropertyId ?? "none"}>
+            <SelectTrigger><SelectValue placeholder="물건 선택" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">연결하지 않음</SelectItem>
+              {properties.map((property) => (
+                <SelectItem key={property.id} value={property.id}>
+                  {property.name}{property.region ? ` · ${property.region}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* 보고서 파일 업로드 */}
       <div className="flex flex-col gap-2">
@@ -201,7 +277,13 @@ export function ReportForm({
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-ash-gray py-6 text-body-sm text-smoke-gray transition-colors hover:border-sidebar-active/30 hover:bg-hint-of-sky">
           <Upload className="size-4" />
           파일 선택 또는 드래그
-          <input type="file" multiple className="hidden" onChange={onFilePick} />
+          <input
+            type="file"
+            multiple
+            className="hidden"
+            accept=".pdf,.hwp,.hwpx,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.zip"
+            onChange={onFilePick}
+          />
         </label>
         {files.length > 0 && (
           <ul className="flex flex-col gap-1.5">
@@ -215,6 +297,7 @@ export function ReportForm({
                   {formatBytes(f.size)}
                   <button
                     type="button"
+                    aria-label={`${f.name} 선택 해제`}
                     onClick={() =>
                       setFiles((prev) => prev.filter((_, idx) => idx !== i))
                     }

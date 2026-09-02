@@ -42,8 +42,8 @@ export function AccountForm({ profile }: { profile: Profile }) {
 
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (pw1.length < 6) {
-      toast.error("비밀번호는 6자 이상이어야 합니다.");
+    if (pw1.length < 12) {
+      toast.error("비밀번호는 12자 이상이어야 합니다.");
       return;
     }
     if (pw1 !== pw2) {
@@ -99,7 +99,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
       <Card>
         <CardHeader>
           <CardTitle>비밀번호 변경</CardTitle>
-          <CardDescription>새 비밀번호를 입력하세요. (6자 이상)</CardDescription>
+          <CardDescription>새 비밀번호를 입력하세요. (12자 이상)</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={changePassword} className="flex flex-col gap-3">
@@ -111,6 +111,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
                 value={pw1}
                 onChange={(e) => setPw1(e.target.value)}
                 autoComplete="new-password"
+                minLength={12}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -121,6 +122,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
                 value={pw2}
                 onChange={(e) => setPw2(e.target.value)}
                 autoComplete="new-password"
+                minLength={12}
               />
             </div>
             <div>

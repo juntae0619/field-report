@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MapPin, Pencil, Plus } from "lucide-react";
+import { Clock, MapPin, MapPinned, Pencil, Plus } from "lucide-react";
 
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -11,9 +11,10 @@ import {
   type Schedule,
   type ScheduleStatus,
 } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/utils";
 import { PageHeader, EmptyStateCompact } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { deleteSchedule } from "../actions";
@@ -38,7 +39,7 @@ export default async function ScheduleDetailPage({
 
   const { data: reports } = await supabase
     .from("reports")
-    .select("id, title, created_at, author:profiles(name)")
+    .select("id, title, created_at, author:profiles(name), property:properties(id, name)")
     .eq("schedule_id", id)
     .order("created_at", { ascending: false });
 
@@ -58,9 +59,9 @@ export default async function ScheduleDetailPage({
               </Button>
               <form action={deleteSchedule}>
                 <input type="hidden" name="id" value={id} />
-                <Button variant="destructive" type="submit">
+                <ConfirmSubmitButton variant="destructive" confirmMessage="이 일정을 삭제하시겠습니까? 연결된 보고서는 유지됩니다.">
                   삭제
-                </Button>
+                </ConfirmSubmitButton>
               </form>
             </div>
           ) : undefined
@@ -75,12 +76,18 @@ export default async function ScheduleDetailPage({
         </Badge>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
         <span>{formatDate(schedule.visit_date)}</span>
+        {schedule.visit_time && (
+          <span className="flex items-center gap-1"><Clock className="size-4" /> {formatTime(schedule.visit_time)}</span>
+        )}
         {schedule.region && (
           <span className="flex items-center gap-1">
             <MapPin className="size-4" /> {schedule.region}
           </span>
+        )}
+        {schedule.meeting_place && (
+          <span className="flex items-center gap-1"><MapPinned className="size-4" /> {schedule.meeting_place}</span>
         )}
       </div>
 
@@ -116,14 +123,18 @@ export default async function ScheduleDetailPage({
           )}
           {reports?.map((r) => {
             const author = r.author as unknown as { name: string } | null;
+            const property = r.property as unknown as { id: string; name: string } | null;
             return (
               <Link
                 key={r.id}
                 href={`/reports/${r.id}`}
                 className="flex items-center justify-between rounded-lg border p-3 hover-row"
               >
-                <span className="font-medium">{r.title}</span>
-                <span className="text-xs text-muted-foreground">
+                <div className="min-w-0">
+                  <span className="font-medium">{r.title}</span>
+                  {property && <p className="truncate text-xs text-muted-foreground">연결 물건: {property.name}</p>}
+                </div>
+                <span className="shrink-0 text-xs text-muted-foreground">
                   {author?.name} · {formatDate(r.created_at)}
                 </span>
               </Link>

@@ -9,6 +9,7 @@ import { sanitizeHtml, isHtmlEmpty } from "@/lib/sanitize";
 import { type Comment, type Post } from "@/lib/types";
 import { PageHeader, EmptyStateCompact } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,9 +71,9 @@ export default async function PostDetailPage({
                 </Button>
                 <form action={deletePost}>
                   <input type="hidden" name="id" value={id} />
-                  <Button variant="destructive" type="submit">
+                  <ConfirmSubmitButton variant="destructive" confirmMessage="이 게시글과 댓글을 모두 삭제하시겠습니까?">
                     삭제
-                  </Button>
+                  </ConfirmSubmitButton>
                 </form>
               </>
             )}

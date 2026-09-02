@@ -69,6 +69,7 @@ export function ScheduleForm({
           id="title"
           name="title"
           required
+          maxLength={200}
           defaultValue={schedule?.title}
           placeholder={isVisit ? "예) 송파구 임장" : "예) 3조 임장 발표"}
         />
@@ -86,12 +87,35 @@ export function ScheduleForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor="region">{isVisit ? "지역" : "장소"}</Label>
+          <Label htmlFor="visit_time">{isVisit ? "집결 시간" : "시작 시간"}</Label>
+          <Input
+            id="visit_time"
+            name="visit_time"
+            type="time"
+            defaultValue={schedule?.visit_time?.slice(0, 5) ?? ""}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="region">{isVisit ? "임장 지역" : "발표 장소"}</Label>
           <Input
             id="region"
             name="region"
             defaultValue={schedule?.region ?? ""}
             placeholder={isVisit ? "예) 서울 송파구" : "예) 강남 스터디룸"}
+            maxLength={200}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="meeting_place">{isVisit ? "집결 장소" : "상세 위치·접속 링크"}</Label>
+          <Input
+            id="meeting_place"
+            name="meeting_place"
+            defaultValue={schedule?.meeting_place ?? ""}
+            placeholder={isVisit ? "예) 잠실역 3번 출구" : "예) 4층 회의실 / 온라인 링크"}
+            maxLength={300}
           />
         </div>
       </div>

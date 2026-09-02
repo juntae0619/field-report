@@ -10,7 +10,7 @@ import {
   type Schedule,
   type ScheduleStatus,
 } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getDateKeyInTimeZone } from "@/lib/utils";
 import { PageHeader, EmptyStateCompact } from "@/components/page-header";
 import {
   Card,
@@ -24,12 +24,13 @@ import { ScheduleCalendar } from "@/components/schedule-calendar";
 export default async function DashboardPage() {
   const profile = await requireProfile();
   const supabase = await createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getDateKeyInTimeZone();
 
-  const monthStart = today.slice(0, 7) + "-01";
-  const nextMonthDate = new Date(today);
-  nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
-  const monthEnd = nextMonthDate.toISOString().slice(0, 10);
+  const [year, month] = today.split("-").map(Number);
+  const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const monthEnd = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
 
   const [
     { data: upcoming },

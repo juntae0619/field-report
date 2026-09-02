@@ -6,8 +6,9 @@
 ## 주요 기능
 
 - **조원 관리**: 권한(운영자/조원)·반(주중/주말) 설정, 조 편성 (운영자)
-- **임장 일정/계획**: 일정 등록과 계획 작성, 반별 필터 (운영자 작성, 전원 열람)
-- **임장 보고서**: 양식 작성(개요/입지/시세/장단점/총평/평점) + 파일 첨부(한글/PDF/사진)
+- **임장 일정/계획**: 날짜·시간·집결지·동선 등록, 반/상태별 검색 (운영자 작성, 전원 열람)
+- **임장 희망 물건**: 거래유형·가격·면적·준공·세대수·원문 링크·검토상태 관리
+- **임장 보고서**: 양식 작성(개요/입지/시세/장단점/총평/평점) + 일정·물건 연결 + 파일 첨부
 - **피드백**: 보고서·물건에 대한 평점/코멘트
 - **게시판**: 공지/자료/잡담, 댓글, 상단 고정(운영자)
 - **개인 메모**: 본인만 볼 수 있는 메모
@@ -30,9 +31,10 @@ npm install
 ### 2. Supabase 프로젝트 준비
 
 1. [supabase.com](https://supabase.com/dashboard) 에서 새 프로젝트를 생성합니다.
-2. **SQL Editor** 에서 `supabase/migrations/0001_init.sql` 전체를 붙여넣고 실행합니다.
-   (테이블, RLS 정책, 트리거, Storage `reports` 버킷이 생성됩니다.)
-3. (선택) `supabase/seed.sql` 을 실행하면 샘플 조/물건이 생성됩니다.
+2. **SQL Editor** 에서 `supabase/migrations/`의 SQL 파일을 번호 순서대로 실행합니다.
+   (테이블, RLS 정책, 인증 프로필 트리거, Storage `reports` 버킷이 생성됩니다.)
+3. 기존 배포를 업데이트하는 경우에도 아직 적용하지 않은 마이그레이션을 반드시 실행합니다.
+4. (선택) `supabase/seed.sql` 을 실행하면 샘플 조/물건이 생성됩니다.
 
 ### 3. 환경 변수 설정
 
@@ -44,6 +46,7 @@ cp .env.example .env.local
 ```
 
 ```
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
@@ -70,8 +73,10 @@ update public.profiles set role = 'admin' where email = '본인이메일@example
 
 1. 이 저장소를 GitHub 에 올립니다.
 2. [Vercel](https://vercel.com/) 에서 import 후, 환경 변수
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` 를 등록합니다.
-3. 배포합니다. (Supabase Auth 의 Site URL / Redirect URL 에 배포 도메인을 추가하세요.)
+   `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`를 등록합니다.
+3. 운영자 비밀번호 초기화를 사용할 경우 `SUPABASE_SERVICE_ROLE_KEY`도 서버 환경 변수로 등록합니다.
+4. 배포합니다. Supabase Auth의 Site URL과 Redirect URL에 배포 도메인 및
+   `https://배포도메인/auth/callback`을 추가하세요.
 
 ## 디렉터리 구조
 
@@ -171,3 +176,27 @@ Supabase 내부 에러 메시지를 그대로 노출해 계정 존재 여부를 
 ```sql
 -- supabase/migrations/0004_storage_rls_fix.sql 내용 실행
 ```
+
+## v0.3.0 임장 업무·보안 개선
+
+- 일시중지된 Supabase 프로젝트 복구 및 인증 오류 로깅 보완
+- 비밀번호 찾기/재설정과 프로필 자동 복구 추가
+- 물건 검토상태, 거래유형, 가격, 면적, 준공연도, 세대수, 원문 링크 추가
+- 일정 시간·집결 장소와 일정/물건 검색 필터 추가
+- 보고서의 물건 개요, 입지, 가격·시세, 장단점 구조화 입력 복원
+- 보고서 작성 시 연결 일정·물건을 직접 선택하도록 개선
+- 게시글·댓글·메모·물건·보고서 변경 작업의 서버 권한 검증 강화
+- 보고서 Storage 파일 크기·확장자·UPDATE 권한을 서버 정책으로 제한
+- 위험한 삭제 작업에 확인 절차 추가
+- 조장 지정 기능과 서울 시간대 기준 대시보드 날짜 처리 추가
+
+### 운영 DB 적용
+
+기존 Supabase 프로젝트에는 아래 파일을 순서대로 실행해야 합니다.
+
+```sql
+-- supabase/migrations/0006_auth_profile_repair.sql
+-- supabase/migrations/0007_domain_security_hardening.sql
+```
+
+마이그레이션 적용 후 애플리케이션 코드를 배포하세요.

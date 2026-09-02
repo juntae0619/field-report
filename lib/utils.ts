@@ -5,6 +5,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function getDateKeyInTimeZone(date = new Date(), timeZone = "Asia/Seoul"): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 export function formatDate(date: string | Date, withTime = false): string {
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return "-";
@@ -46,4 +57,24 @@ export function formatBytes(bytes: number): string {
   const units = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+}
+
+export function formatPriceManwon(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return "-";
+  const eok = Math.floor(value / 10000);
+  const manwon = value % 10000;
+  if (eok > 0 && manwon > 0) return `${eok}억 ${manwon.toLocaleString("ko-KR")}만원`;
+  if (eok > 0) return `${eok}억원`;
+  return `${value.toLocaleString("ko-KR")}만원`;
+}
+
+export function formatArea(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return "-";
+  const pyeong = value / 3.3058;
+  return `${value.toLocaleString("ko-KR")}㎡ (${pyeong.toFixed(1)}평)`;
+}
+
+export function formatTime(value: string | null): string {
+  if (!value) return "-";
+  return value.slice(0, 5);
 }

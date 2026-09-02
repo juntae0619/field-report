@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { requireProfile } from "@/lib/auth";
+import { requireAdmin, requireProfile } from "@/lib/auth";
 import { sanitizeHtml, isHtmlEmpty } from "@/lib/sanitize";
 
 export async function createPost(formData: FormData) {
@@ -14,7 +14,7 @@ export async function createPost(formData: FormData) {
   const rawContent = String(formData.get("content") ?? "");
   const content = isHtmlEmpty(rawContent) ? "" : sanitizeHtml(rawContent);
   const category = String(formData.get("category") ?? "").trim() || null;
-  if (!title) return;
+  if (!title || title.length > 200 || rawContent.length > 50000) return;
 
   const { data, error } = await supabase
     .from("posts")
@@ -29,13 +29,21 @@ export async function createPost(formData: FormData) {
 }
 
 export async function updatePost(id: string, formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
 
   const title = String(formData.get("title") ?? "").trim();
   const rawContent = String(formData.get("content") ?? "");
   const content = isHtmlEmpty(rawContent) ? "" : sanitizeHtml(rawContent);
   const category = String(formData.get("category") ?? "").trim() || null;
+  if (!title || title.length > 200 || rawContent.length > 50000) return;
+
+  const { data: post } = await supabase
+    .from("posts")
+    .select("author_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!post || (profile.role !== "admin" && post.author_id !== profile.id)) return;
 
   await supabase.from("posts").update({ title, content, category }).eq("id", id);
   revalidatePath("/board");
@@ -44,17 +52,23 @@ export async function updatePost(id: string, formData: FormData) {
 }
 
 export async function deletePost(formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
   const id = String(formData.get("id"));
+  const { data: post } = await supabase
+    .from("posts")
+    .select("author_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!post || (profile.role !== "admin" && post.author_id !== profile.id)) return;
+
   await supabase.from("posts").delete().eq("id", id);
   revalidatePath("/board");
   redirect("/board");
 }
 
 export async function togglePin(formData: FormData) {
-  const profile = await requireProfile();
-  if (profile.role !== "admin") return;
+  await requireAdmin();
   const supabase = await createClient();
   const id = String(formData.get("id"));
   const pinned = String(formData.get("pinned")) === "true";
@@ -68,7 +82,7 @@ export async function addComment(formData: FormData) {
   const supabase = await createClient();
   const postId = String(formData.get("post_id"));
   const content = String(formData.get("content") ?? "").trim();
-  if (!content) return;
+  if (!content || content.length > 2000) return;
 
   await supabase
     .from("comments")
@@ -77,10 +91,21 @@ export async function addComment(formData: FormData) {
 }
 
 export async function deleteComment(formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
   const id = String(formData.get("comment_id"));
   const postId = String(formData.get("post_id"));
+  const { data: comment } = await supabase
+    .from("comments")
+    .select("author_id, post_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (
+    !comment ||
+    comment.post_id !== postId ||
+    (profile.role !== "admin" && comment.author_id !== profile.id)
+  ) return;
+
   await supabase.from("comments").delete().eq("id", id);
   revalidatePath(`/board/${postId}`);
 }

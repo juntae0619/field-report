@@ -23,6 +23,8 @@ export default async function SignupPage({
             name="name"
             type="text"
             placeholder="홍길동"
+            autoComplete="name"
+            maxLength={100}
             required
           />
         </div>
@@ -33,6 +35,7 @@ export default async function SignupPage({
             name="email"
             type="email"
             placeholder="name@company.com"
+            autoComplete="email"
             required
           />
         </div>
@@ -42,7 +45,9 @@ export default async function SignupPage({
             id="password"
             name="password"
             type="password"
-            placeholder="6자 이상"
+            placeholder="12자 이상"
+            autoComplete="new-password"
+            minLength={12}
             required
           />
         </div>

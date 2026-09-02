@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { COHORT_LABEL, type Cohort, type Profile } from "@/lib/types";
+import { COHORT_LABEL, type Cohort, type Group, type Profile } from "@/lib/types";
 import { PageHeader, EmptyStateCompact } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SubmitButton } from "@/components/submit-button";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { MemberRow } from "./member-row";
 import { GroupAssign } from "./group-assign";
-import { createGroup, deleteGroup, removeMember } from "./actions";
+import { createGroup, deleteGroup, removeMember, updateGroupLeader } from "./actions";
 
 export default async function MembersPage() {
   await requireAdmin();
@@ -35,7 +36,7 @@ export default async function MembersPage() {
     ]);
 
   const allProfiles = (profiles ?? []) as Profile[];
-  const allGroups = groups ?? [];
+  const allGroups = (groups ?? []) as Group[];
 
   const membersByGroup = new Map<string, Profile[]>();
   for (const m of memberships ?? []) {
@@ -111,14 +112,14 @@ export default async function MembersPage() {
                       </div>
                       <form action={deleteGroup}>
                         <input type="hidden" name="group_id" value={g.id} />
-                        <Button
-                          type="submit"
+                        <ConfirmSubmitButton
                           variant="ghost"
                           size="sm"
                           className="text-muted-foreground"
+                          confirmMessage={`${g.name} 조를 삭제하시겠습니까? 조원 계정은 유지됩니다.`}
                         >
                           삭제
-                        </Button>
+                        </ConfirmSubmitButton>
                       </form>
                     </div>
                     <div className="mb-3 flex flex-wrap gap-2">
@@ -147,6 +148,7 @@ export default async function MembersPage() {
                             />
                             <button
                               type="submit"
+                              aria-label={`${m.name || m.email} 조 배정 해제`}
                               className="rounded-full p-0.5 hover:bg-muted-foreground/20"
                             >
                               <X className="size-3" />
@@ -155,6 +157,22 @@ export default async function MembersPage() {
                         </Badge>
                       ))}
                     </div>
+                    <form action={updateGroupLeader} className="mb-3 flex items-end gap-2 rounded-md bg-muted/40 p-2">
+                      <input type="hidden" name="group_id" value={g.id} />
+                      <div className="min-w-0 flex-1">
+                        <Label className="mb-1 text-xs">조장</Label>
+                        <Select name="leader_id" defaultValue={g.leader_id ?? "none"}>
+                          <SelectTrigger><SelectValue placeholder="조장 선택" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">미지정</SelectItem>
+                            {members.map((member) => (
+                              <SelectItem key={member.id} value={member.id}>{member.name || member.email}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <SubmitButton variant="outline" size="sm">저장</SubmitButton>
+                    </form>
                     <GroupAssign groupId={g.id} candidates={candidates} />
                   </div>
                 );

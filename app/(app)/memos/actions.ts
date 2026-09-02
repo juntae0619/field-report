@@ -9,7 +9,7 @@ export async function createMemo(formData: FormData) {
   const supabase = await createClient();
   const title = String(formData.get("title") ?? "").trim();
   const content = String(formData.get("content") ?? "").trim() || null;
-  if (!title && !content) return;
+  if ((!title && !content) || title.length > 200 || (content?.length ?? 0) > 20000) return;
 
   await supabase.from("memos").insert({
     owner_id: profile.id,
@@ -20,23 +20,25 @@ export async function createMemo(formData: FormData) {
 }
 
 export async function updateMemo(formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
   const id = String(formData.get("id"));
   const title = String(formData.get("title") ?? "").trim();
   const content = String(formData.get("content") ?? "").trim() || null;
+  if (title.length > 200 || (content?.length ?? 0) > 20000) return;
 
   await supabase
     .from("memos")
     .update({ title: title || "(제목 없음)", content })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("owner_id", profile.id);
   revalidatePath("/memos");
 }
 
 export async function deleteMemo(formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
   const id = String(formData.get("id"));
-  await supabase.from("memos").delete().eq("id", id);
+  await supabase.from("memos").delete().eq("id", id).eq("owner_id", profile.id);
   revalidatePath("/memos");
 }

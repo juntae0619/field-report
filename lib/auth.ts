@@ -9,13 +9,44 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
+    .maybeSingle();
+
+  if (data) return data as Profile;
+
+  if (error) {
+    console.error("[auth:profile-read]", {
+      code: error.code,
+      message: error.message,
+      userId: user.id,
+    });
+    return null;
+  }
+
+  const fallbackName =
+    typeof user.user_metadata?.name === "string" && user.user_metadata.name.trim()
+      ? user.user_metadata.name.trim()
+      : user.email?.split("@")[0] ?? "";
+
+  const { data: repairedProfile, error: repairError } = await supabase
+    .from("profiles")
+    .insert({ id: user.id, name: fallbackName, email: user.email ?? null })
+    .select("*")
     .single();
 
-  return (data as Profile) ?? null;
+  if (repairError) {
+    console.error("[auth:profile-repair]", {
+      code: repairError.code,
+      message: repairError.message,
+      userId: user.id,
+    });
+    return null;
+  }
+
+  return repairedProfile as Profile;
 }
 
 export async function requireProfile(): Promise<Profile> {

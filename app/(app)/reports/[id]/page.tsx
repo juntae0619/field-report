@@ -8,6 +8,7 @@ import { formatDate, formatBytes } from "@/lib/utils";
 import { type Feedback, type Report, type ReportFile } from "@/lib/types";
 import { PageHeader, EmptyStateCompact } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,9 +90,9 @@ export default async function ReportDetailPage({
               </Button>
               <form action={deleteReport}>
                 <input type="hidden" name="id" value={id} />
-                <Button variant="destructive" type="submit">
+                <ConfirmSubmitButton variant="destructive" confirmMessage="이 보고서와 첨부 파일, 피드백을 모두 삭제하시겠습니까?">
                   삭제
-                </Button>
+                </ConfirmSubmitButton>
               </form>
             </div>
           ) : undefined
@@ -151,7 +152,7 @@ export default async function ReportDetailPage({
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <Button variant="ghost" size="icon" asChild>
-                  <a href={url} target="_blank" rel="noreferrer" download>
+                  <a href={url} target="_blank" rel="noopener noreferrer" download aria-label={`${file.file_name} 다운로드`}>
                     <Download className="size-4" />
                   </a>
                 </Button>
@@ -159,11 +160,6 @@ export default async function ReportDetailPage({
                   <form action={deleteReportFile}>
                     <input type="hidden" name="file_id" value={file.id} />
                     <input type="hidden" name="report_id" value={id} />
-                    <input
-                      type="hidden"
-                      name="storage_path"
-                      value={file.storage_path}
-                    />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -198,11 +194,11 @@ export default async function ReportDetailPage({
         </CardContent>
       </Card>
 
-      {/* 이전 양식 상세 내용 (있을 때만) */}
+      {/* 구조화된 임장 분석 */}
       {hasLegacy && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>상세 내용</CardTitle>
+            <CardTitle>임장 분석</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             {legacySections.map(

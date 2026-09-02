@@ -10,10 +10,13 @@ import { updateProperty } from "../../actions";
 
 export default async function EditPropertyPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
   const profile = await requireProfile();
   const supabase = await createClient();
 
@@ -36,7 +39,7 @@ export default async function EditPropertyPage({
       <PageHeader title="임장 희망 물건 수정" />
       <Card>
         <CardContent>
-          <PropertyForm action={action} property={property} />
+          <PropertyForm action={action} property={property} error={error} />
         </CardContent>
       </Card>
     </div>

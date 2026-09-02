@@ -50,7 +50,7 @@ export default async function ReportsPage({
   if (q) {
     const term = q.replace(/[%,]/g, " ").trim();
     query = query.or(
-      `title.ilike.%${term}%,region.ilike.%${term}%,conclusion.ilike.%${term}%`
+      `title.ilike.%${term}%,region.ilike.%${term}%,summary.ilike.%${term}%,location_review.ilike.%${term}%,price_review.ilike.%${term}%,conclusion.ilike.%${term}%`
     );
   }
   if (region) {

@@ -12,9 +12,15 @@ function parse(formData: FormData) {
   return {
     title: String(formData.get("title") ?? "").trim(),
     visit_date: String(formData.get("visit_date") ?? ""),
-    cohort: String(formData.get("cohort") ?? "weekday"),
+    visit_time: /^\d{2}:\d{2}$/.test(String(formData.get("visit_time") ?? ""))
+      ? String(formData.get("visit_time"))
+      : null,
+    cohort: ["weekday", "weekend"].includes(String(formData.get("cohort")))
+      ? String(formData.get("cohort"))
+      : "weekday",
     group_id: group_id_raw === "none" ? null : group_id_raw,
     region: String(formData.get("region") ?? "").trim() || null,
+    meeting_place: String(formData.get("meeting_place") ?? "").trim() || null,
     plan: String(formData.get("plan") ?? "").trim() || null,
     type: ["visit", "presentation"].includes(type) ? type : "visit",
     status: ["planned", "done", "canceled"].includes(status) ? status : "planned",
@@ -25,6 +31,9 @@ export async function createSchedule(formData: FormData) {
   const profile = await requireAdmin();
   const supabase = await createClient();
   const values = parse(formData);
+  if (!values.title || values.title.length > 200 || !/^\d{4}-\d{2}-\d{2}$/.test(values.visit_date)) {
+    redirect(`/schedules/new?error=${encodeURIComponent("제목과 날짜를 올바르게 입력해주세요.")}`);
+  }
 
   const { data, error } = await supabase
     .from("schedules")
@@ -44,8 +53,14 @@ export async function updateSchedule(id: string, formData: FormData) {
   await requireAdmin();
   const supabase = await createClient();
   const values = parse(formData);
+  if (!values.title || values.title.length > 200 || !/^\d{4}-\d{2}-\d{2}$/.test(values.visit_date)) {
+    redirect(`/schedules/${id}/edit?error=${encodeURIComponent("제목과 날짜를 올바르게 입력해주세요.")}`);
+  }
 
-  await supabase.from("schedules").update(values).eq("id", id);
+  const { error } = await supabase.from("schedules").update(values).eq("id", id);
+  if (error) {
+    redirect(`/schedules/${id}/edit?error=${encodeURIComponent(error.message)}`);
+  }
 
   revalidatePath("/schedules");
   revalidatePath(`/schedules/${id}`);

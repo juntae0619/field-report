@@ -2,6 +2,8 @@ export type Cohort = "weekday" | "weekend";
 export type Role = "admin" | "member";
 export type ScheduleStatus = "planned" | "done" | "canceled";
 export type ScheduleType = "visit" | "presentation";
+export type PropertyStatus = "candidate" | "scheduled" | "visited" | "hold" | "archived";
+export type DealType = "sale" | "jeonse" | "monthly_rent" | "auction" | "public_auction" | "other";
 
 export const COHORT_LABEL: Record<Cohort, string> = {
   weekday: "주중반",
@@ -22,6 +24,23 @@ export const SCHEDULE_STATUS_LABEL: Record<ScheduleStatus, string> = {
 export const SCHEDULE_TYPE_LABEL: Record<ScheduleType, string> = {
   visit: "임장 일정",
   presentation: "발표 일정",
+};
+
+export const PROPERTY_STATUS_LABEL: Record<PropertyStatus, string> = {
+  candidate: "검토 중",
+  scheduled: "임장 예정",
+  visited: "임장 완료",
+  hold: "보류",
+  archived: "종료",
+};
+
+export const DEAL_TYPE_LABEL: Record<DealType, string> = {
+  sale: "매매",
+  jeonse: "전세",
+  monthly_rent: "월세",
+  auction: "법원경매",
+  public_auction: "공매",
+  other: "기타",
 };
 
 export interface Profile {
@@ -55,8 +74,18 @@ export interface Property {
   property_type: string | null;
   region: string | null;
   note: string | null;
+  status: PropertyStatus;
+  deal_type: DealType | null;
+  asking_price_manwon: number | null;
+  monthly_rent_manwon: number | null;
+  maintenance_fee_manwon: number | null;
+  exclusive_area_m2: number | null;
+  building_year: number | null;
+  households: number | null;
+  source_url: string | null;
   created_by: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Schedule {
@@ -66,11 +95,14 @@ export interface Schedule {
   cohort: Cohort;
   group_id: string | null;
   region: string | null;
+  visit_time: string | null;
+  meeting_place: string | null;
   plan: string | null;
   status: ScheduleStatus;
   type: ScheduleType;
   created_by: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Report {

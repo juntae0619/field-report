@@ -6,9 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 
 export async function deleteReport(formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
   const id = String(formData.get("id"));
+  const { data: report } = await supabase
+    .from("reports")
+    .select("author_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!report || (profile.role !== "admin" && report.author_id !== profile.id)) return;
 
   // 첨부 파일 스토리지 정리
   const { data: files } = await supabase
@@ -27,16 +33,24 @@ export async function deleteReport(formData: FormData) {
 }
 
 export async function deleteReportFile(formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
   const fileId = String(formData.get("file_id"));
   const reportId = String(formData.get("report_id"));
 
-  // storage_path를 사용자 입력에서 받지 않고 DB에서 조회 (RLS가 소유권 검증)
+  const { data: report } = await supabase
+    .from("reports")
+    .select("author_id")
+    .eq("id", reportId)
+    .maybeSingle();
+  if (!report || (profile.role !== "admin" && report.author_id !== profile.id)) return;
+
+  // storage_path를 사용자 입력에서 받지 않고 DB에서 조회
   const { data: fileRecord } = await supabase
     .from("report_files")
     .select("storage_path")
     .eq("id", fileId)
+    .eq("report_id", reportId)
     .single();
 
   if (!fileRecord) return;
@@ -53,23 +67,34 @@ export async function addFeedback(formData: FormData) {
 
   const reportId = String(formData.get("report_id"));
   const content = String(formData.get("content") ?? "").trim();
-  const ratingRaw = String(formData.get("rating") ?? "0");
-  if (!content) return;
+  const ratingRaw = Number(String(formData.get("rating") ?? "0"));
+  const rating = Number.isInteger(ratingRaw) && ratingRaw >= 1 && ratingRaw <= 5 ? ratingRaw : null;
+  if (!content || content.length > 2000) return;
 
   await supabase.from("feedbacks").insert({
     report_id: reportId,
     author_id: profile.id,
     content,
-    rating: Number(ratingRaw) || null,
+    rating,
   });
   revalidatePath(`/reports/${reportId}`);
 }
 
 export async function deleteFeedback(formData: FormData) {
-  await requireProfile();
+  const profile = await requireProfile();
   const supabase = await createClient();
   const id = String(formData.get("feedback_id"));
   const reportId = String(formData.get("report_id"));
+  const { data: feedback } = await supabase
+    .from("feedbacks")
+    .select("author_id, report_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (
+    !feedback ||
+    feedback.report_id !== reportId ||
+    (profile.role !== "admin" && feedback.author_id !== profile.id)
+  ) return;
 
   await supabase.from("feedbacks").delete().eq("id", id);
   revalidatePath(`/reports/${reportId}`);
