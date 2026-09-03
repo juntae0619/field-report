@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   COHORT_LABEL,
   SCHEDULE_STATUS_LABEL,
-  type Cohort,
   type Schedule,
   type ScheduleStatus,
 } from "@/lib/types";
@@ -69,7 +68,7 @@ export default async function ScheduleDetailPage({
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Badge variant="outline">{COHORT_LABEL[schedule.cohort as Cohort]}</Badge>
+        <Badge variant="outline">{schedule.cohort ? COHORT_LABEL[schedule.cohort] : "전체 참여"}</Badge>
         {schedule.group && <Badge variant="secondary">{schedule.group.name}</Badge>}
         <Badge variant={schedule.status === "done" ? "secondary" : "default"}>
           {SCHEDULE_STATUS_LABEL[schedule.status as ScheduleStatus]}

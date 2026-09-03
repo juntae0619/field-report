@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   COHORT_LABEL,
   SCHEDULE_STATUS_LABEL,
-  type Cohort,
   type Schedule,
   type ScheduleStatus,
 } from "@/lib/types";
@@ -70,7 +69,7 @@ export default async function DashboardPage() {
     <div>
       <PageHeader
         title={`${profile.name}님, 안녕하세요`}
-        description="다가오는 임장 일정과 최근 소식을 확인하세요."
+        description="다가오는 임장·발표 일정과 최근 소식을 확인하세요."
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -103,7 +102,7 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>다가오는 임장 일정</CardTitle>
+            <CardTitle>다가오는 일정</CardTitle>
             <Link
               href="/schedules"
               className="text-sm text-smoke-gray transition-colors hover:text-sidebar-active hover:underline"
@@ -129,7 +128,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Badge variant="outline">
-                    {COHORT_LABEL[s.cohort as Cohort]}
+                    {s.cohort ? COHORT_LABEL[s.cohort] : "전체 참여"}
                   </Badge>
                   <Badge
                     variant={s.status === "done" ? "secondary" : "default"}

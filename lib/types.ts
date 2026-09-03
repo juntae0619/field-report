@@ -92,7 +92,7 @@ export interface Schedule {
   id: string;
   title: string;
   visit_date: string;
-  cohort: Cohort;
+  cohort: Cohort | null;
   group_id: string | null;
   region: string | null;
   visit_time: string | null;

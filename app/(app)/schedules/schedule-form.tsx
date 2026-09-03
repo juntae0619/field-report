@@ -120,36 +120,42 @@ export function ScheduleForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label>반</Label>
-          <Select name="cohort" defaultValue={schedule?.cohort ?? "weekday"}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekday">주중반</SelectItem>
-              <SelectItem value="weekend">주말반</SelectItem>
-            </SelectContent>
-          </Select>
+      {isVisit ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label>반</Label>
+            <Select name="cohort" defaultValue={schedule?.cohort ?? "weekday"}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekday">주중반</SelectItem>
+                <SelectItem value="weekend">주말반</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label>조</Label>
+            <Select name="group_id" defaultValue={schedule?.group_id ?? "none"}>
+              <SelectTrigger>
+                <SelectValue placeholder="전체" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">전체 / 미지정</SelectItem>
+                {groups.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <Label>조</Label>
-          <Select name="group_id" defaultValue={schedule?.group_id ?? "none"}>
-            <SelectTrigger>
-              <SelectValue placeholder="전체" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">전체 / 미지정</SelectItem>
-              {groups.map((g) => (
-                <SelectItem key={g.id} value={g.id}>
-                  {g.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      ) : (
+        <div className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
+          발표 일정은 주중반·주말반 구분 없이 전체 조원이 참여하는 일정으로 등록됩니다.
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <Label>상태</Label>

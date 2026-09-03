@@ -21,7 +21,7 @@ export default async function NewSchedulePage({
 
   return (
     <div>
-      <PageHeader title="새 임장 일정" description="임장 일정과 계획을 등록합니다." />
+      <PageHeader title="새 일정" description="임장 또는 전체 참여 발표 일정을 등록합니다." />
       <Card>
         <CardContent>
           <ScheduleForm

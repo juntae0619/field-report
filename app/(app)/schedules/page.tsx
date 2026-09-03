@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import {
   COHORT_LABEL,
   SCHEDULE_STATUS_LABEL,
-  type Cohort,
   type Schedule,
   type ScheduleStatus,
 } from "@/lib/types";
@@ -33,7 +32,7 @@ export default async function SchedulesPage({
     .order("visit_date", { ascending: false })
     .limit(100);
   if (cohort === "weekday" || cohort === "weekend") {
-    query = query.eq("cohort", cohort);
+    query = query.or(`cohort.eq.${cohort},cohort.is.null`);
   }
   if (["planned", "done", "canceled"].includes(status)) {
     query = query.eq("status", status);
@@ -49,7 +48,7 @@ export default async function SchedulesPage({
     <div>
       <PageHeader
         title="일정 관리"
-        description="반·조별 임장 일정과 발표 일정을 확인하세요."
+        description="반·조별 임장 일정과 전체 참여 발표 일정을 확인하세요."
         action={
           profile.role === "admin" ? (
             <Button asChild>
@@ -110,7 +109,7 @@ export default async function SchedulesPage({
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                     <Badge variant="outline">
-                      {COHORT_LABEL[s.cohort as Cohort]}
+                      {s.cohort ? COHORT_LABEL[s.cohort] : "전체 참여"}
                     </Badge>
                     <Badge
                       variant={
