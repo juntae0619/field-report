@@ -1,11 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
-
-// target="_blank" 링크에 rel="noopener noreferrer" 강제 적용 (탭내빙 방지)
-DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-  if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
-    node.setAttribute("rel", "noopener noreferrer");
-  }
-});
+import sanitize from "sanitize-html";
 
 const ALLOWED_TAGS = [
   "p",
@@ -31,10 +24,22 @@ const ALLOWED_TAGS = [
 ];
 
 export function sanitizeHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty ?? "", {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR: ["href", "target", "rel", "class"],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.:-]|$))/i,
+  return sanitize(dirty ?? "", {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: {
+      a: ["href", "target", "rel", "class"],
+      "*": ["class"],
+    },
+    allowedSchemes: ["http", "https", "mailto", "tel"],
+    allowProtocolRelative: false,
+    transformTags: {
+      a: (_tagName, attribs) => ({
+        tagName: "a",
+        attribs: attribs.target === "_blank"
+          ? { ...attribs, rel: "noopener noreferrer nofollow" }
+          : attribs,
+      }),
+    },
   });
 }
 
